@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaffemaskine Administration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .hidden {
+            display: none;
+        }
+        form, table {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+        }
+        input, select, button {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        table th, table td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+        .alert {
+            color: rgb(0, 255, 13);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Kaffemaskine Administration</h1>
+        
+        <!-- Login Section -->
+        <div id="login-section">
+            <h2>Log ind til Kaffemachinning</h2>
+            <form id="login-form">
+                <label for="username">Brugernavn</label>
+                <input type="text" id="username" placeholder="Indtast brugernavn" required>
+
+                <label for="password">Kodeord</label>
+                <input type="password" id="password" placeholder="Indtast kodeord" required>
+
+                <button type="button" onclick="login()">Log ind</button>
+            </form>
+        </div>
+
+        <!-- Kaffemaskine Administration Section -->
+        <div id="admin-section" class="hidden">
+            <h2>Maskinoversigt</h2>
+            <div id="alerts" class="alert"></div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Placering</th>
+                        <th>Model</th>
+                        <th>Rengøring</th>
+                        <th>Sidste Rengøringsdato</th>
+                        <th>Mængde kaffe tilbage (g)</th>
+                        <th>Opfyldt kaffe (g)</th>
+                        <th>Rengjort af</th>
+                    </tr>
+                </thead>
+                <tbody id="machine-table-body">
+                    <!-- Maskindata indsættes her dynamisk -->
+                </tbody>
+            </table>
+
+            <h3>Registrér handling</h3>
+            <form id="update-form">
+                <label for="machine-id">Vælg Maskine (ID)</label>
+                <select id="machine-id">
+
+                </select>
+
+                <label for="task">Handling</label>
+                <select id="task">
+                    <option value="clean">Rengøring</option>
+                    <option value="refill">Opfyldning af kaffe</option>
+                </select>
+
+                <label for="amount">Mængde (g) - Kun for opfyldning</label>
+                <input type="number" id="amount" placeholder="Indtast mængde" min="0">
+
+                <label for="person">Udført af</label>
+                <input type="text" id="person" placeholder="Dit navn" required>
+
+                <button type="button" onclick="registerTask()">Registrér</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (username === "admin" && password === "1234") {
+                alert("Login succesfuldt!");
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('admin-section').classList.remove('hidden');
+                loadMachines();
+            } else {
+                alert("Forkert brugernavn eller kodeord.");
+            }
+        }
+
+        const machines = [
+            { id: 1, location: "Køkken A", model: "Model X", cleaned: "Ja", lastCleaned: "2024-06-01", coffeeLeft: 50, coffeeRefilled: 0, cleanedBy: "John" },
+            { id: 2, location: "Køkken B", model: "Model Y", cleaned: "Nej", lastCleaned: "2024-05-30", coffeeLeft: 0, coffeeRefilled: 0, cleanedBy: "" },
+            { id: 3, location: "Kantine", model: "Model Z", cleaned: "Ja", lastCleaned: "2024-06-05", coffeeLeft: 700, coffeeRefilled: 0, cleanedBy: "Sara" }
+        ];
+
+        function loadMachines() {
+            const tableBody = document.getElementById('machine-table-body');
+            const machineSelect = document.getElementById('machine-id');
+            const alerts = document.getElementById('alerts');
+            tableBody.innerHTML = "";
+            machineSelect.innerHTML = "";
+            alerts.innerHTML = "";
+
+            machines.forEach(machine => {
+                if (machine.coffeeLeft === 0) {
+                    alerts.innerHTML += `⚠️ Advarsel: Maskine ${machine.id} (${machine.location}) er løbet tør for kaffe!<br>`;
+                }
+
+                const row = `<tr>
+                    <td>${machine.id}</td>
+                    <td>${machine.location}</td>
+                    <td>${machine.model}</td>
+                    <td>${machine.cleaned}</td>
+                    <td>${machine.lastCleaned}</td>
+                    <td>${machine.coffeeLeft}</td>
+                    <td>${machine.coffeeRefilled}</td>
+                    <td>${machine.cleanedBy || "Ikke registreret"}</td>
+                </tr>`;
+                tableBody.innerHTML += row;
+
+                const option = `<option value="${machine.id}">${machine.id} - ${machine.location}</option>`;
+                machineSelect.innerHTML += option;
+            });
+        }
+
+        function registerTask() {
+            const machineId = parseInt(document.getElementById('machine-id').value);
+            const task = document.getElementById('task').value;
+            const amount = parseInt(document.getElementById('amount').value) || 0;
+            const person = document.getElementById('person').value;
+
+            const machine = machines.find(m => m.id === machineId);
+            if (task === "clean") {
+                machine.cleaned = "Ja";
+                machine.lastCleaned = new Date().toISOString().split('T')[0];
+                machine.cleanedBy = person;
+            } else if (task === "refill") {
+                machine.coffeeLeft += amount;
+                machine.coffeeRefilled = amount;
+                machine.cleanedBy = person;
+            }
+            loadMachines();
+        }
+    </script>
+</body>
+</html>
